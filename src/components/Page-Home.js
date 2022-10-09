@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Button, Spin, DatePicker, Form, Table, Empty, Modal, Input, notification } from "antd"
+import { Button, Spin, DatePicker, Form, Table, Empty, Modal, Input, notification, Select, Tag } from "antd"
 import { useHistory } from "react-router-dom"
 import moment from "moment"
 import * as ApplicantService from "../service/ApplicantService"
@@ -13,6 +13,7 @@ const Home = () => {
     const [loading, setLoading] = useState(false)
     const [table, setTable] = useState(-1)
     const [display, setDisplay] = useState([])
+    const { Option } = Select
 
     const [openCreateApplicant, setOpenCreateApplicant] = useState(false)
     const [openCreateAccount, setOpenCreateAccount] = useState(false)
@@ -120,6 +121,7 @@ const Home = () => {
                 amount: Number(values.amount),
                 start: values.start.utc().format('YYYY-MM-DDT00:00:00'),
                 durationDays: Number(values.durationDays),
+                type: values.type
             }
             let result = await LoanService.createLoan(values.applicantID, values.accountID, variables)
             console.log('_createLoan result', result);
@@ -138,6 +140,7 @@ const Home = () => {
     const handleOnClick = (record, state) => {
         switch (state) {
             case 'applicant':
+                formApplicant.resetFields()
                 setOpenCreateApplicant(true)
                 break;
             case 'account':
@@ -145,6 +148,7 @@ const Home = () => {
                 setSelectedApplicant(record)
                 break;
             case 'loan':
+                formLoan.resetFields()
                 setOpenCreateLoan(true)
                 setSelectedAccount(record)
                 setSelectedApplicant(display.find(s => s.id === record.applicantID))
@@ -255,6 +259,14 @@ const Home = () => {
             dataIndex: 'start',
             render: (text, record, index) => {
                 return moment.utc(text).format('DD MMM YYYY, HH:mm')
+            }
+        },
+        {
+            title: 'Type',
+            dataIndex: 'type',
+            render: (text, record, index) => {
+                let color = text === 'HOME' ? 'green' : (text === 'CAR' ? 'purple' : 'red')
+                return (<Tag color={color}>{text}</Tag>)
             }
         }
     ]
@@ -395,6 +407,20 @@ const Home = () => {
                         }]}
                     >
                         <Input autoComplete="off" placeholder="Days to loan" />
+                    </Form.Item>
+                    <Form.Item
+                        label="Type"
+                        name="type"
+                        rules={[{
+                            required: true
+                        }]}
+                    >
+                        <Select
+                            placeholder="Loan Type"
+                        >
+                            <Option key="CAR" value="CAR">Car</Option>
+                            <Option key="HOME" value="HOME">Home</Option>
+                        </Select>
                     </Form.Item>
                 </Form>
             </Modal>

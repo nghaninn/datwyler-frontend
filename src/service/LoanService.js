@@ -8,7 +8,8 @@ export const createLoan = (applicantID, accountID, obj) => {
   var raw = JSON.stringify({
     "amount": obj.amount,
     "start": obj.start,
-    "durationDays": obj.durationDays
+    "durationDays": obj.durationDays,
+    "type": obj.type
 });
 
   var requestOptions = {
