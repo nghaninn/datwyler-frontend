@@ -348,7 +348,7 @@ const Home = () => {
                             pattern: new RegExp('^[a-zA-Z ]+$'),
                         }]}
                     >
-                        <Input placeholder="Applicant's name" />
+                        <Input autoComplete="off" placeholder="Applicant's name" />
                     </Form.Item>
                 </Form>
             </Modal>
