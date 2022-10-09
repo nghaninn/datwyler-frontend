@@ -194,7 +194,7 @@ const Home = () => {
             dataIndex: 'noLoan'
         },
         {
-            title: 'Total Loan Amount',
+            title: 'Total Loan Amount ($)',
             dataIndex: 'amount'
         },
         {
@@ -220,7 +220,7 @@ const Home = () => {
             }
         },
         {
-            title: 'Total Loan Amount',
+            title: 'Total Loan Amount ($)',
             dataIndex: 'amount',
             render: (text, record, index) => {
                 let sum = 0;
@@ -247,8 +247,11 @@ const Home = () => {
             dataIndex: 'id'
         },
         {
-            title: 'Amount',
-            dataIndex: 'amount'
+            title: 'Amount ($)',
+            dataIndex: 'amount',
+            redner: (text, record, index) => {
+                return (Number(text).toFixed(2))
+            }
         },
         {
             title: 'Duration (Days)',
@@ -376,7 +379,7 @@ const Home = () => {
                     onFinish={() => onModalFinish(formLoan.getFieldsValue(), 'loan')}
                 >
                     <Form.Item
-                        label="Amount"
+                        label="Amount ($)"
                         name="amount"
                         rules={[{
                             required: true
