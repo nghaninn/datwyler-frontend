@@ -1,13 +1,10 @@
-import React, { useContext, useEffect } from "react"
+import React, { useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 
-import { AppContext } from "../contexts/AppContext"
-// import HeaderNav from "./Component-HeaderNav";
+import han from "../media/han.png"
 
 const HeaderApp = () => {
-    // const { appState } = useContext(AppContext)
     const location = useLocation()
-    // console.log("location", location);
 
     useEffect(() => {
         window.scrollTo({ top: 0 })
@@ -17,11 +14,9 @@ const HeaderApp = () => {
         <div className="header">
             <div className="header-content">
                 <div className="left">
-                    {/* <HeaderNav view="mobile" /> */}
-                    <Link to={'/'} className="item">
-                        {/* <img src={Logo} /> */} a
+                    <Link to={{ pathname: 'https://me.nghaninn.com' }} target="_blank" className="item">
+                        <img src={han} width={50} alt="me" />
                     </Link>
-                    {/* <HeaderNav view="desktop" /> */}
                 </div>
             </div>
         </div>

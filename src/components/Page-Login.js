@@ -40,10 +40,8 @@ const Login = (props) => {
     }, [])
 
     const onFinish = async (values) => {
-        console.log("onFinish", values);
         try {
             let result = await LoginService.login(values.username, values.password);
-            console.log('login', JSON.parse(result));
             actionLogin(JSON.parse(result));
 
             if (values.remember) {
@@ -66,7 +64,6 @@ const Login = (props) => {
     }
 
     const handleCheckChange = (e) => {
-        // console.log("handleCheckChange");
         if (form.getFieldValue("remember") === false) {
             localStorage.removeItem("isap_remember_site")
         }
@@ -77,7 +74,6 @@ const Login = (props) => {
             <div className="container-login">
                 <div className="login-body">
                     <div className="login-header">
-                        {/* <img src={Logo} /> */}
                         <QuestionCircleOutlined />
                     </div>
                     <div className="login-subheader">

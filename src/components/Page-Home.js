@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react"
-import { Result, Button, Spin, DatePicker, Form, TreeSelect, Select, Table, Empty, Modal } from "antd"
-import { Link, useHistory } from "react-router-dom"
+import { Button, Spin, DatePicker, Form, Table, Empty, Modal, Input, notification } from "antd"
+import { useHistory } from "react-router-dom"
 import moment from "moment"
 import * as ApplicantService from "../service/ApplicantService"
+import * as AccountService from "../service/AccountService"
+import * as LoanService from "../service/LoanService"
 
 const Home = () => {
-    const [dataLoaded, setDataLoaded] = useState(false)
     const history = useHistory()
-    const [formAccount] = Form.useForm()
+    const [formApplicant] = Form.useForm()
     const [formLoan] = Form.useForm()
     const [loading, setLoading] = useState(false)
     const [table, setTable] = useState(-1)
     const [display, setDisplay] = useState([])
 
+    const [openCreateApplicant, setOpenCreateApplicant] = useState(false)
     const [openCreateAccount, setOpenCreateAccount] = useState(false)
     const [selectedApplicant, setSelectedApplicant] = useState({})
     const [openCreateLoan, setOpenCreateLoan] = useState(false)
@@ -29,26 +31,27 @@ const Home = () => {
             let array = []
             for (let d of table) {
                 let allLoans = d.accounts.map(s => s.loans).flat();
-                console.log(allLoans);
+
+                let sum = 0;
+                for (let l of allLoans) {
+                    sum += (l?.amount ?? 0)
+                }
+
                 array.push({
                     ...d,
                     noAccount: d.accounts.length,
                     noLoan: allLoans.length,
-                    amount: allLoans.reduce(((a, b) => (a?.amount ?? 0) + (b?.amount ?? 0)), 0).toFixed(2)
+                    // amount: allLoans.reduce(((a, b) => (a?.amount ?? 0) + (b?.amount ?? 0)), 0).toFixed(2)
+                    amount: sum.toFixed(2)
                 })
             }
             setDisplay(array);
         }
     }, [table])
 
-    const handleNewApplicant = async () => {
-
-    }
-
     const handleOnRow = (value, index) => {
         return {
             onClick: (event) => {
-                // console.log(event.target.className);
                 if (event.target.className !== 'noRowClick' && event.target.className !== '') {
                     history.push('applicant/' + value.id)
                 }
@@ -56,21 +59,14 @@ const Home = () => {
         }
     }
 
-    const onFinish = (values) => {
-        console.log(values);
-    }
-
     const _listApplicant = async () => {
         setLoading(true);
         try {
-            // console.log(await Auth.signOut());
-            // console.log(await Auth.currentCredentials());
-            // console.log(await Auth.currentAuthenticatedUser());
             let result = await ApplicantService.listApplicant()
-            console.log('result', result);
+            console.log('_listApplicant result', result);
 
             let data = JSON.parse(result);
-            console.log('data', data);
+            console.log('_listApplicant data', data);
 
             setTable(data)
 
@@ -81,9 +77,69 @@ const Home = () => {
         }
     }
 
+    const _createApplicant = async (values) => {
+        setLoading(true);
+        try {
+            let variables = {
+                name: values.name.trim()
+            }
+            let result = await ApplicantService.createApplicant(variables)
+            console.log('_createApplicant result', result);
+
+            notification.success({ message: "Applicant created." })
+            formApplicant.resetFields()
+            setOpenCreateApplicant(false);
+            _listApplicant();
+        } catch (err) {
+            console.log(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const _createAccount = async (values) => {
+        setLoading(true);
+        try {
+            let result = await AccountService.createAccount(values.applicantID)
+            console.log('_createAccount result', result);
+
+            notification.success({ message: "Account created." })
+            setOpenCreateAccount(false);
+            _listApplicant();
+        } catch (err) {
+            console.log(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const _createLoan = async (values) => {
+        setLoading(true);
+        try {
+            let variables = {
+                amount: Number(values.amount),
+                start: values.start.utc().format('YYYY-MM-DDT00:00:00'),
+                durationDays: Number(values.durationDays),
+            }
+            let result = await LoanService.createLoan(values.applicantID, values.accountID, variables)
+            console.log('_createLoan result', result);
+
+            notification.success({ message: "Loan created." })
+            formLoan.resetFields()
+            setOpenCreateLoan(false);
+            _listApplicant();
+        } catch (err) {
+            console.log(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const handleOnClick = (record, state) => {
-        console.log(record)
         switch (state) {
+            case 'applicant':
+                setOpenCreateApplicant(true)
+                break;
             case 'account':
                 setOpenCreateAccount(true)
                 setSelectedApplicant(record)
@@ -91,20 +147,25 @@ const Home = () => {
             case 'loan':
                 setOpenCreateLoan(true)
                 setSelectedAccount(record)
-                setSelectedApplicant(display.find(s=> s.id === record.applicantID))
+                setSelectedApplicant(display.find(s => s.id === record.applicantID))
                 break;
             default:
                 break;
         }
     }
 
-    const onModalFinish = (values, state) => {
+    const onModalFinish = async (values, state) => {
         switch (state) {
+            case 'applicant':
+                await formApplicant.validateFields()
+                _createApplicant({ ...values })
+                break;
             case 'account':
-                // link api to create account
+                _createAccount({ applicantID: selectedApplicant.id })
                 break;
             case 'loan':
-                // link api to create loan
+                await formLoan.validateFields()
+                _createLoan({ applicantID: selectedApplicant.id, accountID: selectedAccount.id, ...values })
                 break;
             default:
                 break;
@@ -158,8 +219,12 @@ const Home = () => {
             title: 'Total Loan Amount',
             dataIndex: 'amount',
             render: (text, record, index) => {
-                console.log('loan amount', record)
-                return record.loans && record.loans.length > 0 ? (record.loans?.reduce((a, b) => (a?.amount ?? 0) + (b?.amount ?? 0)), 0).toFixed(2) : ''
+                let sum = 0;
+                for (let l of record.loans) {
+                    sum += (l?.amount ?? 0)
+                }
+                // return record.loans && record.loans.length > 0 ? (record.loans?.reduce((a, b) => (a?.amount ?? 0) + (b?.amount ?? 0), 0).toFixed(2)) : ''
+                return sum.toFixed(2)
             }
         },
         {
@@ -232,7 +297,7 @@ const Home = () => {
             <div className="homepage row">
                 <h1 className="row1">Coding Assignment</h1>
                 <div>
-                    <Button disabled={dataLoaded} onClick={handleNewApplicant}>New Applicant</Button>
+                    <Button onClick={() => { handleOnClick(null, 'applicant') }}>New Applicant</Button>
                 </div>
             </div>
             <div>
@@ -241,24 +306,45 @@ const Home = () => {
                     columns={columns}
                     rowKey={record => record.id}
                     dataSource={display}
-                    // pagination={table.pagination}
-                    // loading={table.loading}
-                    // scroll={{ x: 1200, y: '55vh' }}
-                    // onChange={handleTableChange}
-                    // onRow={handleOnRow}
                     rowClassName={'table-row-clickable'}
                     expandable={{
                         expandedRowRender: record => (
                             expandedRowAccountRender(record.accounts)
                         ),
                     }}
+                    pagination={false}
                 />
             </div>
+            <Modal
+                open={openCreateApplicant}
+                title={`Register a new Applicant?`}
+                onCancel={() => { setOpenCreateApplicant(false) }}
+                onOk={() => { onModalFinish(formApplicant.getFieldsValue(), 'applicant') }}
+                okText="Create Applicant"
+            >
+                <Form
+                    form={formApplicant}
+                    onFinish={() => onModalFinish(formApplicant.getFieldsValue(), 'applicant')}
+                >
+                    <Form.Item
+                        label="Name"
+                        name="name"
+                        rules={[{
+                            required: true
+                        }, {
+                            message: "Only Accepts Alphabet",
+                            pattern: new RegExp('^[a-zA-Z ]+$'),
+                        }]}
+                    >
+                        <Input placeholder="Applicant's name" />
+                    </Form.Item>
+                </Form>
+            </Modal>
             <Modal
                 open={openCreateAccount}
                 title={`Want to create New Account for ${selectedApplicant.name}`}
                 onCancel={() => { setOpenCreateAccount(false); setSelectedApplicant({}) }}
-                onOk={() => {onModalFinish(null, 'account')}}
+                onOk={() => { onModalFinish(null, 'account') }}
             >
                 {/* <Form
                     form={formAccount}
@@ -269,15 +355,46 @@ const Home = () => {
             <Modal
                 open={openCreateLoan}
                 title={`Create New Loan for ${selectedApplicant.name}, Account ID ${selectedAccount.id}`}
+                okText="Create"
                 onCancel={() => { setOpenCreateLoan(false); setSelectedApplicant({}); setSelectedAccount({}) }}
-                onOk={() => {onModalFinish(formLoan.getFieldsValue(), 'loan')}}
+                onOk={() => { onModalFinish(formLoan.getFieldsValue(), 'loan') }}
             >
                 <Form
                     form={formLoan}
                     onFinish={() => onModalFinish(formLoan.getFieldsValue(), 'loan')}
                 >
-                    <Form.Item>
-                        
+                    <Form.Item
+                        label="Amount"
+                        name="amount"
+                        rules={[{
+                            required: true
+                        }, {
+                            message: "Invalid Amount",
+                            pattern: new RegExp('^[+]?([0-9]*[.])?[0-9]+$'),
+                        }]}
+                    >
+                        <Input autoComplete="off" placeholder="Amount to loan" />
+                    </Form.Item>
+                    <Form.Item
+                        label="Start"
+                        name="start"
+                        rules={[{
+                            required: true
+                        }]}
+                    >
+                        <DatePicker format={'DD MMM YYYY'} />
+                    </Form.Item>
+                    <Form.Item
+                        label="Duration (Days)"
+                        name="durationDays"
+                        rules={[{
+                            required: true
+                        }, {
+                            message: "Invalid Days",
+                            pattern: new RegExp('^[+]?([1-9][0-9]*)$'),
+                        }]}
+                    >
+                        <Input autoComplete="off" placeholder="Days to loan" />
                     </Form.Item>
                 </Form>
             </Modal>

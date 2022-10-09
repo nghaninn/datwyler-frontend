@@ -358,35 +358,7 @@ code {
           flex: 1;
 }
 
-.card-container {
-  border: 1px black solid;
-  padding: var(--spacing);
-  margin-bottom: var(--spacing);
-  border-radius: var(--border-radius);
-}
-
-.card-content-details {
-  min-width: "100px";
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: horizontal;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: row;
-          flex-direction: row;
-  grid: var(--spacing);
-  grid-gap: var(--spacing);
-  -ms-flex-wrap: wrap;
-      flex-wrap: wrap;
-  -webkit-box-pack: start;
-      -ms-flex-pack: start;
-          justify-content: flex-start;
-}
-
-.card-content-details .card-airport {
-  border: 1px black solid;
-  padding: var(--spacing);
-  margin-bottom: var(--spacing);
-  border-radius: var(--border-radius);
+.above-md .ant-spin-nested-loading {
+  margin: 0 auto;
 }
 /*# sourceMappingURL=App.css.map */

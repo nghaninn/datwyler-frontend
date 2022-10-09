@@ -36,7 +36,7 @@ const AppContextProvider = (props) => {
     const getFromLocalStorage = async () => {
         const user = JSON.parse(localStorage.getItem("account"))
         if (user) {
-            console.log('getFromLocalStorage', user);
+            // console.log('getFromLocalStorage', user);
             actionLogin(user)
         }
     }
